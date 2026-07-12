@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8"/>
+<title>IT Quiz — Vizual va Qiziqarli</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#071428; --bg2:#071a2a; --card:#071826;
+    --accent:#00e0c6; --accent2:#6be7ff; --muted:#9fb5b8;
+    --glass: rgba(255,255,255,0.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:28px;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#e8fbff;display:flex;justify-content:center;min-height:100vh}
+  .container{width:980px;max-width:96%;display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid var(--glass);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(2,8,20,0.6)}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#002428;font-size:20px;box-shadow:0 6px 20px rgba(0,224,198,0.12)}
+  h1{margin:0;font-size:20px}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .main{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+  .questionCard{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.02);position:relative;overflow:hidden}
+  .qHeader{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pill{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-size:13px;color:var(--muted)}
+  .question{font-size:18px;font-weight:600;margin:10px 0}
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ans{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;transition:transform .12s, box-shadow .12s}
+  .ans:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(0,0,0,0.45)}
+  .ans.selected{outline:2px solid rgba(0,224,198,0.12);box-shadow:0 8px 28px rgba(6,156,137,0.06)}
+  .controls{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+  .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#002428;padding:8px 12px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+  .side{display:flex;flex-direction:column;gap:12px}
+  .stat{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);border:1px solid rgba(255,255,255,0.02)}
+  .timer{font-weight:700;font-size:18px;color:var(--accent)}
+  .progress{height:10px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden}
+  .bar{height:100%;background:linear-gradient(90deg,var(--accent),#6be7ff);width:0%;transition:width .3s linear}
+  .badgeRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .badge{padding:6px 8px;background:rgba(255,255,255,0.02);border-radius:999px;font-size:13px;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+  .resultBox{display:none;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(255,255,255,0.01));text-align:center}
+  .resultScore{font-size:22px;font-weight:800;color:var(--accent);margin-top:6px}
+  .summary{max-height:260px;overflow:auto;margin-top:10px;border-top:1px dashed rgba(255,255,255,0.02);padding-top:8px}
+  .qSmall{font-size:13px;color:var(--muted)}
+  footer{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;margin-top:10px}
+  @media(max-width:900px){.container{grid-template-columns:1fr;}.answers{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <header>
+      <div class="logo">IT</div>
+      <div>
+        <h1>IT Quiz — Bilimingizni sinang</h1>
+        <div class="sub">20 ta qiziqarli savol — 120 soniya — har to'g'ri javob +10 ball</div>
+      </div>
+    </header>
+
+    <div class="main">
+      <div class="questionCard" id="questionCard">
+        <div class="qHeader">
+          <div class="pill" id="qNum">Savol 1 / 20</div>
+          <div class="pill" id="difficulty">Daraja: O'rta</div>
+        </div>
+
+        <div class="question" id="question">Savol yuklanmoqda...</div>
+
+        <div class="answers" id="answers"></div>
+
+        <div class="controls">
+          <button id="prevBtn" class="btn ghost">Oldingi</button>
+          <button id="nextBtn" class="btn ghost">Keyingi</button>
+          <button id="submitBtn" class="btn">Tugatish</button>
+        </div>
+      </div>
+
+      <div class="resultBox card" id="final" style="display:none">
+        <div class="qSmall">Natija</div>
+        <div class="resultScore" id="finalScore">0 / 200</div>
+        <div id="finalMsg" class="qSmall" style="margin-top:6px">Xabar</div>
+        <div class="badgeRow" style="justify-content:center;margin-top:10px">
+          <button id="restart" class="btn">Yana o'ynash</button>
+          <button id="review" class="btn ghost">Javoblarni ko'rish</button>
+        </div>
+        <div class="summary" id="summary"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="side card">
+    <div class="stat">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="qSmall">Vaqt qoldi</div>
+          <div class="timer" id="time">02:00</div>
+        </div>
+        <div style="text-align:right">
+          <div class="qSmall">Ball</div>
+          <div style="font-weight:800;font-size:20px" id="score">0</div>
+        </div>
+      </div>
+      <div style="margin-top:10px" class="progress"><div id="timeBar" class="bar"></div></div>
+    </div>
+
+    <div class="stat">
+      <div class="qSmall">Statistika</div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px">
+        <div class="qSmall">To'g'ri</div><div id="correct" style="font-weight:700">0</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px">
+        <div class="qSmall">Savollar</div><div id="totalCount" style="font-weight:700">20</div>
+      </div>
+      <div style="margin-top:10px" class="qSmall">Kategoriya: Algoritmlar, Tarmoqlar, Xavfsizlik, Ma'lumotlar tuzilmalari, Dasturlash, OS, Boshqaruv tizimlari</div>
+    </div>
+
+    <div class="stat">
+      <div class="qSmall">Qoidalar</div>
+      <ul style="margin:8px 0 0 18px;color:var(--muted);font-size:13px">
+        <li>Har to'g'ri javob +10 ball.</li>
+        <li>Vaqt: 120 soniya, vaqt tugasa o'yin tugaydi.</li>
+        <li>Har savolga 1 ta javob tanlanadi.</li>
+      </ul>
+    </div>
+  </aside>
+
+  <footer>Interfeys animatsiyali — faylni saqlang va Firefox’da oching</footer>
+</div>
+
+<script>
+/* 20 ta qiziqarli IT savol */
+const QUESTIONS = [
+{q:"Big O notatsiyasida 'binary search' ning eng yaxshi ishlash murakkabligi nima?", a:["O(n)","O(log n)","O(n log n)","O(1)"], correct:1},
+{q:"HTTP va HTTPS orasidagi asosiy farq nima?", a:["HTTP tezroq, HTTPS sekinroq","HTTPS ma'lumotlarni shifrlaydi","HTTP server tomonida ishlaydi, HTTPS brauzerda","HTTPS faqat GET ishlaydi"], correct:1},
+{q:"Quyidagilardan qaysi biri 'immutable' (o‘zgarmas) ma'lumot tuzilmasi hisoblanadi?", a:["Python ro'yxati (list)","Python to'plami (set)","Python tuple","Python dict"], correct:2},
+{q:"DNS tizimi qanday vazifani bajaradi?", a:["Domen nomini IP manzilga o'giradi","Fayllarni uzatadi","Sahifani keshlaydi","Elektron pochta yuboradi"], correct:0},
+{q:"RESTful API qoidalaridan biri nima?", a:["Server holatni saqlashi kerak","Resurslar URL bilan aniqlanadi","Faol socket orqali bog'lanadi","Har doim XML ishlatadi"], correct:1},
+{q:"Quyidagi kod parchasi qaysi tilga tegishli: for i in range(5): print(i) ?", a:["JavaScript","Python","C++","Ruby"], correct:1},
+{q:"Quyidagi qaysi ma'lumot tuzilmasi FIFO (First In First Out) printsipiga amal qiladi?", a:["Stack","Queue","Tree","Graph"], correct:1},
+{q:"Git'da o'zgartirishlarni vaqtinchalik saqlash uchun ishlatiladigan buyruq nima?", a:["git commit","git stash","git push","git pull"], correct:1},
+{q:"SQLda 'JOIN' operatori nima uchun ishlatiladi?", a:["Jadvallar orasida bog'lanishni amalga oshirish","Ma'lumotni o'chirish","Yangi jadval yaratish","Index yaratish"], correct:0},
+{q:"XSS hujumi (Cross-Site Scripting) nimani maqsad qiladi?", a:["Serverni muzlatish","Mijoz tomonida zararli skriptlarni bajarish","Ma'lumotni zaxiralash","Tarmoqni tezlashtirish"], correct:1},
+{q:"Quyidagi algoritmlar ichida tartiblash uchun eng yaxshisi — O(n log n) vaqt murakkabligiga ega?", a:["Bubble sort","Insertion sort","Merge sort","Selection sort"], correct:2},
+{q:"OSI modelidagi 'Transport' qatlamida qaysi ikkita asosiy protokol mavjud?", a:["HTTP va FTP","TCP va UDP","IP va ICMP","Ethernet va Wi-Fi"], correct:1},
+{q:"Heap ma'lumot tuzilmasi nimaga mos keladi?", a:["DFS", "Min/Max prioritet queue", "Hashing", "Linked list"], correct:1},
+{q:"Quyidagilardan qaysi biri 'concurrency' bilan bog'liq emas?", a:["Thread","Process","Deadlock","Compilation"], correct:3},
+{q:"CAP teoremida 'A' nimani anglatadi?", a:["Availability (mavjudlik)","Accuracy (to'g'ri)","Authentication","Atomicity"], correct:0},
+{q:"IPv6 manzili qancha biti tashkil etadi?", a:["32 bit","64 bit","128 bit","256 bit"], correct:2},
+{q:"OAuth nima uchun ishlatiladi?", a:["Fayl uzatish","Avtorizatsiya va ruxsat berish","Ma'lumotlarni shifrlash","Tarmoq diagnostikasi"], correct:1},
+{q:"Quyidagi kodda xato nima: if (x = 5) { ... } (C yoki Java kabi tillarda)?", a:["Solishtirish o'rniga tayinlash operatori ishlatilgan","Sathli bog'lanish yo'q","Sintaksis to'g'ri","Bu while sikl"], correct:0},
+{q:"Tokenization va hashing qaysi sohada muhim?", a:["Tarmoqlar", "Ma'lumotlar bazasi backup", "Xavfsizlik va autentifikatsiya", "Grafik dizayn"], correct:2},
+{q:"Quyidagi qaysi usul yordamida ma'lumotlar bazasidagi so'rovni tezlashtirish mumkin?", a:["Index yaratish","Har doim SELECT * ishlatish","Barcha ma'lumotni RAMga ko'chirish","Har so'rovni alohida faylga yozish"], correct:0}
+];
+
+const TOTAL = QUESTIONS.length;
+document.getElementById('totalCount').textContent = TOTAL;
+
+let current = 0;
+let selections = Array(TOTAL).fill(null);
+let score = 0;
+let correct = 0;
+const TOTAL_TIME = 120; // s
+let timeLeft = TOTAL_TIME;
+let timer = null;
+
+const qNumEl = document.getElementById('qNum');
+const questionEl = document.getElementById('question');
+const answersEl = document.getElementById('answers');
+const scoreEl = document.getElementById('score');
+const correctEl = document.getElementById('correct');
+const timeEl = document.getElementById('time');
+const timeBar = document.getElementById('timeBar');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const submitBtn = document.getElementById('submitBtn');
+const finalBox = document.getElementById('final');
+const finalScore = document.getElementById('finalScore');
+const finalMsg = document.getElementById('finalMsg');
+const restartBtn = document.getElementById('restart');
+const reviewBtn = document.getElementById('review');
+const summaryEl = document.getElementById('summary');
+
+function startTimer(){
+  updateTime();
+  timer = setInterval(()=>{
+    timeLeft--;
+    if(timeLeft<=0){ timeLeft=0; updateTime(); finish(); }
+    updateTime();
+  },1000);
+}
+function updateTime(){
+  const m = String(Math.floor(timeLeft/60)).padStart(2,'0');
+  const s = String(timeLeft%60).padStart(2,'0');
+  timeEl.textContent = `${m}:${s}`;
+  timeBar.style.width = (timeLeft/TOTAL_TIME*100) + '%';
+}
+
+function render(i){
+  const item = QUESTIONS[i];
+  qNumEl.textContent = `Savol ${i+1} / ${TOTAL}`;
+  // difficulty hint
+  const diffEl = document.getElementById('difficulty');
+  if(i<6) diffEl.textContent = 'Daraja: Oson';
+  else if(i<14) diffEl.textContent = 'Daraja: O‘rta';
+  else diffEl.textContent = 'Daraja: Qiyin';
+
+  questionEl.textContent = item.q;
+  answersEl.innerHTML = '';
+  item.a.forEach((opt, idx)=>{
+    const d = document.createElement('div');
+    d.className = 'ans' + (selections[i]===idx ? ' selected' : '');
+    d.textContent = opt;
+    d.addEventListener('click', ()=>{
+      selections[i] = idx;
+      render(current);
+      updateStats();
+    });
+    answersEl.appendChild(d);
+  });
+}
+
+function updateStats(){
+  let sc=0, corr=0;
+  selections.forEach((s, idx)=>{ if(s===null) return; if(s===QUESTIONS[idx].correct){ sc+=10; corr++; }});
+  score = sc; correct = corr;
+  scoreEl.textContent = score;
+  correctEl.textContent = correct;
+}
+
+prevBtn.addEventListener('click', ()=>{ if(current>0){ current--; render(current); }});
+nextBtn.addEventListener('click', ()=>{ if(current<TOTAL-1){ current++; render(current); }});
+submitBtn.addEventListener('click', finish);
+restartBtn.addEventListener('click', ()=>location.reload());
+reviewBtn.addEventListener('click', showSummary);
+
+function finish(){
+  clearInterval(timer);
+  updateStats();
+  // show result
+  document.getElementById('questionCard').style.display = 'none';
+  finalBox.style.display = 'block';
+  finalScore.textContent = `${score} / ${TOTAL*10}`;
+  const pct = Math.round(score / (TOTAL*10) * 100);
+  let msg = '';
+  if(pct>=90) msg = "Ajoyib! Siz IT bo'yicha juda kuchlisiz.";
+  else if(pct>=70) msg = "Zo'r! Yaxshi bilimlar.";
+  else if(pct>=50) msg = "O‘rta. Biroz mashq kerak.";
+  else msg = "Boshlang‘ich. Ko‘p o‘rganing.";
+  finalMsg.textContent = msg;
+  showSummary();
+}
+
+function showSummary(){
+  summaryEl.innerHTML = '';
+  QUESTIONS.forEach((it, idx)=>{
+    const wr = document.createElement('div');
+    wr.style.padding='8px 6px';
+    wr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+    const qh = document.createElement('div');
+    qh.textContent = `${idx+1}. ${it.q}`;
+    qh.style.fontWeight='700'; qh.style.fontSize='13px';
+    const your = document.createElement('div');
+    your.className='qSmall';
+    if(selections[idx]===null) your.textContent = 'Siz javob bermadingiz.';
+    else your.textContent = 'Siz: ' + it.a[selections[idx]];
+    const corr = document.createElement('div');
+    corr.className='qSmall';
+    corr.style.color = 'var(--accent)';
+    corr.textContent = 'To‘g‘ri: ' + it.a[it.correct];
+    wr.appendChild(qh); wr.appendChild(your); wr.appendChild(corr);
+    summaryEl.appendChild(wr);
+  });
+}
+
+/* Boshlash */
+render(0);
+startTimer();
+updateStats();
+</script>
+</body>
+</html>
