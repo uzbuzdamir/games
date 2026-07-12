@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Global Play - Tetris Blocks</title>
+    <title>Global Play - Guruhli Mafiya Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: #111424;
-            --grid-color: #1a1f38;
-            --accent-color: #e94560;
+            --bg-color: #0d0e15;
+            --panel-bg: #161824;
+            --mafia-red: #ff3333;
+            --civil-blue: #00adb5;
             --text-color: #ffffff;
         }
 
@@ -18,381 +19,400 @@
             color: var(--text-color);
             font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             min-height: 100vh;
-            overflow: hidden;
+            box-sizing: border-box;
             user-select: none;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .header h1 {
-            font-size: 22px;
-            margin: 5px 0;
-            color: var(--accent-color);
+        h1 {
+            font-size: 20px;
+            color: var(--mafia-red);
             text-transform: uppercase;
             letter-spacing: 2px;
+            margin: 5px 0;
+            text-align: center;
         }
 
-        .score-board {
-            font-size: 16px;
+        .phase-banner {
+            background: #ffbc00;
+            color: #000;
             font-weight: bold;
-            color: #00adb5;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 5px 15px;
+            padding: 5px 20px;
             border-radius: 20px;
-            display: inline-block;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(255,188,0,0.2);
         }
 
-        #game-container {
-            position: relative;
-            background-color: rgba(0, 0, 0, 0.5);
-            border: 4px solid var(--grid-color);
-            border-radius: 10px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-        }
-
-        canvas {
-            display: block;
-        }
-
-        /* Telefonlar uchun sensorli boshqaruv tugmalari */
-        .controls {
+        /* 10 ta o'yinchi ro'yxati paneli */
+        .players-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            width: 90%;
-            max-width: 320px;
-            margin-top: 15px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 15px;
+        }
+
+        .player-card {
+            background: var(--panel-bg);
+            border-left: 4px solid #555;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .player-card.alive { border-left-color: #28a745; }
+        .player-card.dead { background: #222; opacity: 0.5; border-left-color: #444; text-decoration: line-through; }
+        .player-card.mafia-team { border-left-color: var(--mafia-red); background: #24181a; }
+        .player-card.civil-team { border-left-color: var(--civil-blue); background: #142229; }
+        .player-card.selected { border: 1px solid #ffbc00; background: #2c2514 !important; }
+
+        /* Jonli o'yin chati loglari */
+        .chat-log {
+            background: #08090d;
+            border: 1px solid #1f2335;
+            border-radius: 10px;
+            padding: 10px;
+            width: 100%;
+            max-width: 360px;
+            height: 140px;
+            overflow-y: auto;
+            box-sizing: border-box;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .chat-msg { margin-bottom: 6px; }
+        .chat-msg .name { font-weight: bold; color: #ffbc00; }
+        .chat-msg.system { color: #888; font-style: italic; }
+
+        .action-box {
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
         }
 
         .btn {
-            background: var(--grid-color);
+            background: var(--mafia-red);
             color: white;
             border: none;
-            padding: 15px;
-            font-size: 18px;
+            padding: 12px;
+            font-size: 15px;
             font-weight: bold;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            text-align: center;
+            width: 100%;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: background 0.1s, transform 0.1s;
         }
 
-        .btn:active {
-            background: var(--accent-color);
-            transform: scale(0.95);
-        }
-
-        .btn-drop {
-            grid-column: span 3;
-            background: #28a745;
-        }
-
-        .btn-drop:active {
-            background: #218838;
-        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background: #444; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🧩 Tetris Blocks</h1>
-        <div class="score-board" id="score">Ball: 0</div>
-    </div>
+    <h1>🕵️ Mafiya Pro (10 O'yinchi)</h1>
+    <div class="phase-banner" id="game-phase">O'yin boshlanishini kutilmoqda</div>
 
-    <div id="game-container">
-        <canvas id="tetris" width="240" height="400"></canvas>
-    </div>
+    <!-- O'YINCHILAR RO'YXATI -->
+    <div class="players-grid" id="players-list"></div>
 
-    <!-- Sensorli ekran boshqaruvi -->
-    <div class="controls">
-        <button class="btn" id="left-btn">⬅️</button>
-        <button class="btn" id="rotate-btn">🔄</button>
-        <button class="btn" id="right-btn">➡️</button>
-        <button class="btn btn-drop" id="drop-btn">⬇️ Tezkor Tushirish</button>
+    <!-- CHAT TIZIMI -->
+    <div class="chat-log" id="chat-box"></div>
+
+    <!-- HARAKATLAR TUGMASI -->
+    <div class="action-box" id="action-area">
+        <button class="btn" onclick="setupGame()">O'yinni Boshlash (Rollarni taqsimlash) 🎭</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
+        if(tg) tg.expand();
 
-        const canvas = document.getElementById('tetris');
-        const context = canvas.getContext('2d');
+        let gameState = {
+            phase: "START", // START, NIGHT_MAFIA, NIGHT_SPECIAL, DAY_TALK, DAY_VOTE
+            myRole: "",
+            myIndex: 0,
+            players: [],
+            selectedTarget: null,
+            killedTonight: null,
+            checkedTonight: null
+        };
 
-        // Bloklar o'lchami (10x20 katakcha uchun)
-        context.scale(20, 20);
+        const botNames = [
+            "Shaxob", "Sardor", "Malika", "Jasur",
+            "Diyor", "Laylo", "Kamron", "Anvar", "Bekzod"
+        ];
 
-        // Chiziqlarni tozalash (ochko) funksiyasi
-        function arenaSweep() {
-            let rowCount = 1;
-            outer: for (let y = arena.length - 1; y > 0; --y) {
-                for (let x = 0; x < arena[y].length; ++x) {
-                    if (arena[y][x] === 0) {
-                        continue outer;
-                    }
+        function addLog(sender, text, isSystem = false) {
+            const chatBox = document.getElementById('chat-box');
+            if (isSystem) {
+                chatBox.innerHTML += `<div class="chat-msg system">⚙️ ${text}</div>`;
+            } else {
+                chatBox.innerHTML += `<div class="chat-msg"><span class="name">${sender}:</span> ${text}</div>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // 1. O'YINNI BOSHIDAN STRATEGIK SOZLASH
+        function setupGame() {
+            if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            // 10 ta o'yinchini shakllantirish (Index 0 — Haqiqiy foydalanuvchi)
+            gameState.players = [{ name: "Siz (Dasturchi)", isBot: false, isAlive: true, role: "", faction: "" }];
+
+            for (let i = 0; i < 9; i++) {
+                gameState.players.push({
+                    name: botNames[i],
+                    isBot: true,
+                    isAlive: true,
+                    role: "",
+                    faction: ""
+                });
+            }
+
+            // Rollarni taqsimlash algoritmi (3 ta Mafiya, 1 ta Komissar, 1 ta Doktor, 5 ta Fuqaro)
+            let rolesPool = ["Mafiya", "Mafiya", "Mafiya", "Komissar", "Doktor", "Fuqaro", "Fuqaro", "Fuqaro", "Fuqaro", "Fuqaro"];
+            rolesPool = rolesPool.sort(() => Math.random() - 0.5);
+
+            gameState.players.forEach((p, idx) => {
+                p.role = rolesPool[idx];
+                p.faction = (p.role === "Mafiya") ? "RED" : "BLUE";
+            });
+
+            gameState.myRole = gameState.players[0].role;
+
+            addLog("", `O'yin boshlandi! Sizga berilgan rol: **${gameState.myRole}**`, true);
+            if (gameState.myRole === "Mafiya") {
+                addLog("Tizim", "🔴 Siz QIZILLAR (Mafiya) jamoasidansiz. Maqsad: Ko'klarni yo'q qilish!", true);
+            } else {
+                addLog("Tizim", "🔵 Siz KO'KLAR (Aholi) jamoasidansiz. Maqsad: Mafiyani fosh qilish!", true);
+            }
+
+            renderPlayers();
+            startNightPhase();
+        }
+
+        function renderPlayers() {
+            const listEl = document.getElementById('players-list');
+            listEl.innerHTML = "";
+
+            gameState.players.forEach((p, idx) => {
+                let cardClass = "player-card " + (p.isAlive ? "alive" : "dead");
+
+                // Agar foydalanuvchi Mafiya bo'lsa, sheriklarini qizil ko'radi
+                if (gameState.myRole === "Mafiya" && p.faction === "RED" && p.isAlive) {
+                    cardClass += " mafia-team";
                 }
-                const row = arena.splice(y, 1)[0].fill(0);
-                arena.unshift(row);
-                ++y;
+                // O'zining kartasi ko'k bo'lib ajralib turadi (Agar aholi bo'lsa)
+                if (idx === 0 && gameState.myRole !== "Mafiya") {
+                    cardClass += " civil-team";
+                }
+                if (gameState.selectedTarget === idx) {
+                    cardClass += " selected";
+                }
 
-                player.score += rowCount * 10;
-                rowCount *= 2;
-                updateScore();
-                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                let roleTag = (idx === 0) ? `(${p.role})` : '';
+                // Agar o'lgan bo'lsa rolini hamma ko'radi
+                if (!p.isAlive) roleTag = `[${p.role}]`;
+
+                listEl.innerHTML += `
+                    <div class="${cardClass}" onclick="selectPlayer(${idx})">
+                        <span>${idx + 1}. ${p.name} ${roleTag}</span>
+                        <span>${p.isAlive ? '❤️' : '💀'}</span>
+                    </div>
+                `;
+            });
+        }
+
+        function selectPlayer(idx) {
+            if (!gameState.players[idx].isAlive || idx === 0) return;
+            if (gameState.phase !== "NIGHT_MAFIA" && gameState.phase !== "NIGHT_SPECIAL" && gameState.phase !== "DAY_VOTE") return;
+
+            gameState.selectedTarget = idx;
+            renderPlayers();
+
+            // Harakat tugmasini aktivlashtirish
+            const actionArea = document.getElementById('action-area');
+            if (gameState.phase === "NIGHT_MAFIA" && gameState.myRole === "Mafiya") {
+                actionArea.innerHTML = `<button class="btn" onclick="confirmMafiaVote()">Hukmni Tasdiqlash 🔫</button>`;
+            } else if (gameState.phase === "NIGHT_SPECIAL" && gameState.myRole === "Komissar") {
+                actionArea.innerHTML = `<button class="btn" style="background:#00adb5;" onclick="confirmKomissarCheck()">Tekshirish 🔍</button>`;
+            } else if (gameState.phase === "DAY_VOTE") {
+                actionArea.innerHTML = `<button class="btn" style="background:#ffbc00; color:#000;" onclick="confirmDayVote()">Ovoz berish 🗳</button>`;
             }
         }
 
-        // To'qnashuvni tekshirish
-        function collide(arena, player) {
-            const [m, o] = [player.matrix, player.pos];
-            for (let y = 0; y < m.length; ++y) {
-                for (let x = 0; x < m[y].length; ++x) {
-                    if (m[y][x] !== 0 &&
-                       (arena[y + o.y] &&
-                        arena[y + o.y][x + o.x]) !== 0) {
-                        return true;
-                    }
+        // 2. TUN FAZASI
+        function startNightPhase() {
+            gameState.phase = "NIGHT_MAFIA";
+            gameState.selectedTarget = null;
+            document.body.style.backgroundColor = "#06070d";
+            document.getElementById('game-phase').innerText = "🌃 TUN (Mafiya uyg'onadi)";
+            addLog("Tizim", "Shahar uyquga ketdi. Mafiya a'zolari qurbonni tanlamoqda...", true);
+
+            const actionArea = document.getElementById('action-area');
+
+            if (gameState.myRole === "Mafiya") {
+                actionArea.innerHTML = `<p>Otish uchun bitta ko'k o'yinchini tanlang:</p>`;
+            } else {
+                // Agar foydalanuvchi aholi bo'lsa, bot mafiyalar o'zaro tasodifiy qaror qabul qiladi
+                setTimeout(() => {
+                    let targets = gameState.players.map((p, i) => (p.faction === "BLUE" && p.isAlive) ? i : null).filter(v => v !== null);
+                    gameState.killedTonight = targets[Math.floor(Math.random() * targets.length)];
+                    addLog("Tizim", "Kechasi o'q ovozi eshitildi...", true);
+                    startSpecialNightPhase();
+                }, 2000);
+            }
+        }
+
+        function confirmMafiaVote() {
+            gameState.killedTonight = gameState.selectedTarget;
+            addLog("Mafiya Jamoasi", `Biz ${gameState.players[gameState.killedTonight].name}ni yo'q qilishga qaror qildik.`, false);
+            startSpecialNightPhase();
+        }
+
+        // 3. KOMISSAR VA DOKTOR FAZASI
+        function startSpecialNightPhase() {
+            gameState.phase = "NIGHT_SPECIAL";
+            gameState.selectedTarget = null;
+            document.getElementById('game-phase').innerText = "🕵️ TUN (Komissar va Doktor vaqti)";
+            renderPlayers();
+
+            const actionArea = document.getElementById('action-area');
+
+            if (gameState.myRole === "Komissar" && gameState.players[0].isAlive) {
+                actionArea.innerHTML = `<p>Rolini bilmoqchi bo'lgan gumonlanuvchini tanlang:</p>`;
+            } else {
+                // Komissar bot bo'lsa avtomat tekshiradi
+                setTimeout(() => {
+                    goToDayPhase();
+                }, 2000);
+            }
+        }
+
+        function confirmKomissarCheck() {
+            let target = gameState.selectedTarget;
+            let roleResult = gameState.players[target].faction === "RED" ? "🔴 MAFIYA!" : "🔵 Tinch aholi.";
+            alert(`Tekshirish natijasi: ${gameState.players[target].name} — ${roleResult}`);
+            goToDayPhase();
+        }
+
+        // 4. KUNDUZGI CHAT VA SIZNING ADMIN INTERFEYSINGIZ
+        function goToDayPhase() {
+            gameState.phase = "DAY_TALK";
+            document.body.style.backgroundColor = "#0d0e15";
+            document.getElementById('game-phase').innerText = "☀️ KUNDUZ (Muhokama)";
+
+            // Kechasi o'ldirilgan odamni hisobdan chiqarish
+            let killedIdx = gameState.killedTonight;
+            if (killedIdx !== null && gameState.players[killedIdx].isAlive) {
+                gameState.players[killedIdx].isAlive = false;
+                addLog("Tong otdi", `🚨 Mudhish xabar! Kechasi ${gameState.players[killedIdx].name} shafqatsizlarcha o'ldirildi!`, true);
+            } else {
+                addLog("Tong otdi", "🌙 Bu kecha hech kim o'lmadi, shifokor hammani saqlab qoldi!", true);
+            }
+
+            renderPlayers();
+
+            if (checkGameOver()) return;
+
+            // Botlar o'zaro chatda tortishadi
+            addLog("Tizim", "Kunlik muhokama boshlandi. O'yinchilar o'z shubhalarini yozishmoqda...", true);
+
+            setTimeout(() => { addLog(botNames[0], "Meningcha 3-o'yinchi juda shubhali harakat qilyapti!"); }, 1000);
+            setTimeout(() => { addLog(botNames[2], "Yo'q, men kechasi o'q ovozini o'ng tomondan eshitdim."); }, 2500);
+            setTimeout(() => {
+                addLog("Tizim", "Muhokama tugadi. Ovoz berish bosqichiga o'tamiz!", true);
+                startVotingPhase();
+            }, 4500);
+        }
+
+        // 5. OVOZ BERISH BOSQICHI
+        function startVotingPhase() {
+            gameState.phase = "DAY_VOTE";
+            gameState.selectedTarget = null;
+            document.getElementById('game-phase').innerText = "🗳 OVOZ BERISH VAQTI";
+            renderPlayers();
+
+            const actionArea = document.getElementById('action-area');
+            actionArea.innerHTML = `<p>Sizningcha kim mafiya? Ovoz berish uchun ro'yxatdan tanlang:</p>`;
+        }
+
+        function confirmDayVote() {
+            if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+            let myVote = gameState.selectedTarget;
+
+            // Botlarning ovozlarini generatsiya qilish (Tasodifiy tirik odamga ovoz berishadi)
+            let aliveIndices = gameState.players.map((p, i) => p.isAlive ? i : null).filter(v => v !== null);
+            let votesCount = Array(10).fill(0);
+
+            // Sizning ovozingiz
+            votesCount[myVote]++;
+
+            // Botlar ovozi
+            aliveIndices.forEach(idx => {
+                if (idx !== 0) { // O'zingizdan tashqari botlar ovoz beradi
+                    let randomVote = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
+                    votesCount[randomVote]++;
                 }
+            });
+
+            // Eng ko'p ovoz olganini aniqlash
+            let maxVotes = 0;
+            let exiledIdx = null;
+            votesCount.forEach((count, i) => {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    exiledIdx = i;
+                }
+            });
+
+            addLog("Ovoz berish yakunlandi", `${gameState.players[exiledIdx].name} eng ko'p ovoz topladi (${maxVotes} ta ovoz) va shahardan haydaldi!`, true);
+            gameState.players[exiledIdx].isAlive = false;
+
+            addLog("Tizim", `${gameState.players[exiledIdx].name}ning roli aslida **${gameState.players[exiledIdx].role}** edi.`, true);
+
+            renderPlayers();
+
+            if (checkGameOver()) return;
+
+            // Keyingi tunga o'tish
+            setTimeout(() => {
+                startNightPhase();
+            }, 3000);
+        }
+
+        // O'YIN TUGASH SHARTLARINI TEKSHIRISH
+        function checkGameOver() {
+            let aliveMafia = gameState.players.filter(p => p.faction === "RED" && p.isAlive).length;
+            let aliveCivils = gameState.players.filter(p => p.faction === "BLUE" && p.isAlive).length;
+
+            if (aliveMafia === 0) {
+                document.getElementById('game-phase').innerText = "🔵 KO'KLAR YUTDI! 🎉";
+                document.getElementById('action-area').innerHTML = `<button class="btn" style="background:#28a745;" onclick="location.reload()">Qayta o'ynash 🔄</button>`;
+                addLog("O'yin tugadi", "🎉 Tabriklaymiz! Barcha mafiyalar yo'q qilindi, Ko'klar (Tinch aholi) jamoasi g'alaba qozondi!", true);
+                return true;
+            }
+            if (aliveMafia >= aliveCivils) {
+                document.getElementById('game-phase').innerText = "🔴 QIZILLAR YUTDI! 🕶";
+                document.getElementById('action-area').innerHTML = `<button class="btn" style="background:#28a745;" onclick="location.reload()">Qayta o'ynash 🔄</button>`;
+                addLog("O'yin tugadi", "🕶 Mafiya (Qizillar) jamoasi shaharni to'liq nazoratga oldi. Qizillar g'alaba qozondi!", true);
+                return true;
             }
             return false;
         }
-
-        function createMatrix(w, h) {
-            const matrix = [];
-            while (h--) {
-                matrix.push(new Array(w).fill(0));
-            }
-            return matrix;
-        }
-
-        // Tetris shakllari (T, J, L, O, S, T, Z)
-        function createPiece(type) {
-            if (type === 'T') {
-                return [
-                    [0, 0, 0],
-                    [1, 1, 1],
-                    [0, 1, 0],
-                ];
-            } else if (type === 'O') {
-                return [
-                    [2, 2],
-                    [2, 2],
-                ];
-            } else if (type === 'L') {
-                return [
-                    [0, 3, 0],
-                    [0, 3, 0],
-                    [0, 3, 3],
-                ];
-            } else if (type === 'J') {
-                return [
-                    [0, 4, 0],
-                    [0, 4, 0],
-                    [4, 4, 0],
-                ];
-            } else if (type === 'I') {
-                return [
-                    [0, 5, 0, 0],
-                    [0, 5, 0, 0],
-                    [0, 5, 0, 0],
-                    [0, 5, 0, 0],
-                ];
-            } else if (type === 'S') {
-                return [
-                    [0, 6, 6],
-                    [6, 6, 0],
-                    [0, 0, 0],
-                ];
-            } else if (type === 'Z') {
-                return [
-                    [7, 7, 0],
-                    [0, 7, 7],
-                    [0, 0, 0],
-                ];
-            }
-        }
-
-        // Rasmga chizish tizimi
-        function draw() {
-            context.fillStyle = '#111424';
-            context.fillRect(0, 0, canvas.width, canvas.height);
-
-            drawMatrix(arena, {x: 0, y: 0});
-            drawMatrix(player.matrix, player.pos);
-        }
-
-        const colors = [
-            null,
-            '#ff0d72',
-            '#0dc2ff',
-            '#0dff72',
-            '#f538ff',
-            '#ff8e0d',
-            '#ffe138',
-            '#3877ff',
-        ];
-
-        function drawMatrix(matrix, offset) {
-            matrix.forEach((row, y) => {
-                row.forEach((value, x) => {
-                    if (value !== 0) {
-                        context.fillStyle = colors[value];
-                        context.fillRect(x + offset.x,
-                                         y + offset.y,
-                                         1, 1);
-                    }
-                });
-            });
-        }
-
-        function merge(arena, player) {
-            player.matrix.forEach((row, y) => {
-                row.forEach((value, x) => {
-                    if (value !== 0) {
-                        arena[y + player.pos.y][x + player.pos.x] = value;
-                    }
-                });
-            });
-        }
-
-        function playerDrop() {
-            player.pos.y++;
-            if (collide(arena, player)) {
-                player.pos.y--;
-                merge(arena, player);
-                playerReset();
-                arenaSweep();
-            }
-            dropCounter = 0;
-        }
-
-        function playerMove(dir) {
-            player.pos.x += dir;
-            if (collide(arena, player)) {
-                player.pos.x -= dir;
-            }
-            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-        }
-
-        function playerReset() {
-            const pieces = 'ILJOTSZ';
-            player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
-            player.pos.y = 0;
-            player.pos.x = (arena[0].length / 2 | 0) -
-                           (player.matrix[0].length / 2 | 0);
-            if (collide(arena, player)) {
-                arena.forEach(row => row.fill(0));
-                player.score = 0;
-                updateScore();
-            }
-        }
-
-        function playerRotate(dir) {
-            const pos = player.pos.x;
-            let offset = 1;
-            rotate(player.matrix, dir);
-            while (collide(arena, player)) {
-                player.pos.x += offset;
-                offset = -(offset + (offset > 0 ? 1 : -1));
-                if (offset > player.matrix[0].length) {
-                    rotate(player.matrix, -dir);
-                    player.pos.x = pos;
-                    return;
-                }
-            }
-            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-        }
-
-        function rotate(matrix, dir) {
-            for (let y = 0; y < matrix.length; ++y) {
-                for (let x = 0; x < y; ++x) {
-                    [
-                        matrix[x][y],
-                        matrix[y][x],
-                    ] = [
-                        matrix[y][x],
-                        matrix[x][y],
-                    ];
-                }
-            }
-
-            if (dir > 0) {
-                matrix.forEach(row => row.reverse());
-            } else {
-                matrix.reverse();
-            }
-        }
-
-        let dropCounter = 0;
-        let dropInterval = 1000;
-
-        let lastTime = 0;
-        function update(time = 0) {
-            const deltaTime = time - lastTime;
-            lastTime = time;
-
-            dropCounter += deltaTime;
-            if (dropCounter > dropInterval) {
-                playerDrop();
-            }
-
-            draw();
-            requestAnimationFrame(update);
-        }
-
-        function updateScore() {
-            document.getElementById('score').innerText = "Ball: " + player.score;
-        }
-
-        const arena = createMatrix(12, 20);
-
-        const player = {
-            pos: {x: 0, y: 0},
-            matrix: null,
-            score: 0,
-        };
-
-        // Klaviatura tugmalari boshqaruvi (Kompyuter uchun)
-        document.addEventListener('keydown', event => {
-            if (event.keyCode === 37) {
-                playerMove(-1);
-            } else if (event.keyCode === 39) {
-                playerMove(1);
-            } else if (event.keyCode === 40) {
-                playerDrop();
-            } else if (event.keyCode === 81) {
-                playerRotate(-1);
-            } else if (event.keyCode === 87) {
-                playerRotate(1);
-            }
-        });
-
-        // Sensorli boshqaruv hodisalarini bog'lash (Telefonlar uchun)
-        document.getElementById('left-btn').addEventListener('click', () => playerMove(-1));
-        document.getElementById('right-btn').addEventListener('click', () => playerMove(1));
-        document.getElementById('rotate-btn').addEventListener('click', () => playerRotate(1));
-        document.getElementById('drop-btn').addEventListener('click', () => {
-            while(!collide(arena, player)) {
-                player.pos.y++;
-            }
-            player.pos.y--;
-            merge(arena, player);
-            playerReset();
-            arenaSweep();
-        });
-
-        playerReset();
-        updateScore();
-        update();
     </script>
 </body>
 </html>
