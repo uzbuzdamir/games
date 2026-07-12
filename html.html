@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Play - Mini Games Portal</title>
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-theme-bg-color: #1a1a2e;
+            --tg-theme-text-color: #ffffff;
+            --tg-theme-button-color: #e94560;
+            --tg-theme-button-text-color: #ffffff;
+            --accent-color: #0f3460;
+            --secondary-bg: #16213e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        header h1 {
+            font-size: 24px;
+            color: var(--tg-theme-button-color);
+            margin: 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        /* O'yinlar menyusi navigatsiyasi */
+        .menu-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .menu-btn {
+            flex: 1;
+            padding: 12px 8px;
+            font-size: 13px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--secondary-bg);
+            color: var(--tg-theme-text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .menu-btn.active {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            transform: translateY(-2px);
+        }
+
+        /* O'yin maydonlari konteyneri */
+        .game-window {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--secondary-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            display: none;
+            min-height: 350px;
+        }
+
+        .game-window.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            margin-top: 0;
+            text-align: center;
+            color: #4e9f3d;
+            font-size: 20px;
+        }
+
+        /* 1-O'YIN: Tosh, Qaychi, Qog'oz uslublari */
+        .rps-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin: 25px 0;
+        }
+
+        .rps-btn {
+            font-size: 40px;
+            background: var(--accent-color);
+            border: 2px solid transparent;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .rps-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--tg-theme-button-color);
+        }
+
+        .result-box {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 16px;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+
+        /* 2-O'YIN: Tic-Tac-Toe uslublari */
+        .ttt-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 260px;
+            margin: 20px auto;
+        }
+
+        .ttt-cell {
+            background-color: var(--accent-color);
+            height: 80px;
+            border-radius: 10px;
+            font-size: 36px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .ttt-cell:hover {
+            background-color: #1f4068;
+        }
+
+        /* 3-O'YIN: Number Guessing uslublari */
+        .guess-container {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .guess-input {
+            width: 60%;
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 2px solid var(--accent-color);
+            background: var(--tg-theme-bg-color);
+            color: #fff;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .action-btn {
+            background-color: var(--tg-theme-button-color);
+            color: white;
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 60%;
+        }
+
+        .score-board {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #00adb5;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Global Play Portal</h1>
+        <p>Imtihon uchun maxsus 3 xil mustaqil o'yin tizimi</p>
+    </header>
+
+    <!-- O'YINLARNI TANLASH MENYUSI -->
+    <div class="menu-container">
+        <button class="menu-btn active" onclick="switchGame('rps')">🪨 Qaychi</button>
+        <button class="menu-btn" onclick="switchGame('ttt')">❌ Krestiki</button>
+        <button class="menu-btn" onclick="switchGame('guess')">🔢 Son Topish</button>
+    </div>
+
+    <!-- 1-O'YIN: TOSH, QAYCHI, QOG'OZ -->
+    <div id="game-rps" class="game-window active">
+        <h2>Tosh, Qaychi, Qog'oz</h2>
+        <p style="text-align: center; opacity: 0.8;">O'z tanlovingizni amalga oshiring:</p>
+        <div class="rps-buttons">
+            <button class="rps-btn" onclick="playRPS('tosh')">🪨</button>
+            <button class="rps-btn" onclick="playRPS('qogoz')">📄</button>
+            <button class="rps-btn" onclick="playRPS('qaychi')">✂️</button>
+        </div>
+        <div class="result-box" id="rps-result">
+            O'yin boshlanishini kutilmoqda...
+        </div>
+        <div class="score-board" id="rps-score">Siz: 0 | Bot: 0</div>
+    </div>
+
+    <!-- 2-O'YIN: TIC-TAC-TOE -->
+    <div id="game-ttt" class="game-window">
+        <h2>Tic-Tac-Toe (X / O)</h2>
+        <p id="ttt-status" style="text-align: center; color: #ffbc00;">Sizning navbatingiz (X)</p>
+        <div class="ttt-grid">
+            <div class="ttt-cell" onclick="makeTTTMove(0)"></div>
+            <div class="ttt-cell" onclick="makeTTTMove(1)"></div>
+            <div class="ttt-cell" onclick="makeTTTMove(2)"></div>
+            <div class="ttt-cell" onclick="makeTTTMove(3)"></div>
+            <div class="ttt-cell" onclick="makeTTTMove(4)"></div>
+            <div class="ttt-cell" onclick="makeTTTMove(5)"></div>
+            <div class="ttt-cell" onclick="makeTTTMove(6)"></div>
+            <div class="ttt-cell" onclick="makeTTTMove(7)"></div>
+            <div class="ttt-cell" onclick="makeTTTMove(8)"></div>
+        </div>
+        <div style="text-align: center; margin-top: 15px;">
+            <button class="action-btn" style="width: auto; padding: 8px 15px; font-size: 14px;" onclick="resetTTT()">Qayta boshlash</button>
+        </div>
+    </div>
+
+    <!-- 3-O'YIN: NUMBER GUESSING -->
+    <div id="game-guess" class="game-window">
+        <h2>Yashirin Sonni Toping</h2>
+        <p style="text-align: center; opacity: 0.8;">Tizim 1 dan 50 gacha bo'lgan tasodifiy son o'yladi. Uni topishga urinib ko'ring!</p>
+        <div class="guess-container">
+            <input type="number" id="guess-input" class="guess-input" placeholder="Son kiriting..." min="1" max="50">
+            <br>
+            <button class="action-btn" onclick="checkGuess()">Tekshirish</button>
+            <div class="result-box" id="guess-result">Urinishlar soni: 0</div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="action-btn" style="width: auto; padding: 6px 12px; font-size: 12px; background-color: var(--accent-color);" onclick="resetGuessGame()">Yangi son o'ylash</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Telegram WebApp yuklanishi va sozlanishi
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Oyna butun ekranga ochilishi uchun
+
+        // Global hisob-kitoblar va o'yin holatlari
+        let scores = { rpsUser: 0, rpsBot: 0 };
+
+        // 1. O'YINLAR ARASIDA NAVIGATSIYA LOGIKASI
+        function switchGame(gameType) {
+            // Aktiv oynalarni o'chirish
+            document.querySelectorAll('.game-window').forEach(win => win.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Tanlangan oynani yoqish
+            document.getElementById(`game-${gameType}`).classList.add('active');
+
+            // Tugmani aktiv qilish
+            const btnIndex = gameType === 'rps' ? 0 : gameType === 'ttt' ? 1 : 2;
+            document.querySelectorAll('.menu-btn')[btnIndex].classList.add('active');
+
+            // Agar son topish o'yiniga o'tilsa va son o'ylanmagan bo'lsa yangilash
+            if (gameType === 'guess' && !targetNumber) {
+                resetGuessGame();
+            }
+        }
+
+        // ==========================================
+        // MODULE 1: TOSH, QAYCHI, QOG'OZ LOGIKASI
+        // ==========================================
+        function playRPS(userChoice) {
+            const choices = ['tosh', 'qogoz', 'qaychi'];
+            const botChoice = choices[Math.floor(Math.random() * 3)];
+            const emoji = { tosh: '🪨', qogoz: '📄', qaychi: '✂️' };
+
+            let resultText = "";
+
+            if (userChoice === botChoice) {
+                resultText = `Durang! <br>Siz: ${emoji[userChoice]} vs Bot: ${emoji[botChoice]}`;
+            } else if (
+                (userChoice === 'tosh' && botChoice === 'qaychi') ||
+                (userChoice === 'qogoz' && botChoice === 'tosh') ||
+                (userChoice === 'qaychi' && botChoice === 'qogoz')
+            ) {
+                resultText = `<span style="color: #4e9f3d; font-weight: bold;">Siz yutdingiz! 🎉</span><br>Siz: ${emoji[userChoice]} vs Bot: ${emoji[botChoice]}`;
+                scores.rpsUser++;
+            } else {
+                resultText = `<span style="color: #e94560; font-weight: bold;">Bot yutdi! 🤖</span><br>Siz: ${emoji[userChoice]} vs Bot: ${emoji[botChoice]}`;
+                scores.rpsBot++;
+            }
+
+            document.getElementById('rps-result').innerHTML = resultText;
+            document.getElementById('rps-score').innerText = `Siz: ${scores.rpsUser} | Bot: ${scores.rpsBot}`;
+
+            // Telegramga ma'lumot uzatish ixtiyoriy (Statistika uchun)
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        // ==========================================
+        // MODULE 2: TIC-TAC-TOE LOGIKASI
+        // ==========================================
+        let tttBoard = Array(9).fill('');
+        let tttActive = true;
+
+        function makeTTTMove(index) {
+            const cells = document.querySelectorAll('.ttt-cell');
+            if (tttBoard[index] !== '' || !tttActive) return;
+
+            // Foydalanuvchi yurishi (X)
+            tttBoard[index] = 'X';
+            cells[index].innerText = 'X';
+            cells[index].style.color = '#e94560';
+
+            if (checkTTTWinner('X')) {
+                document.getElementById('ttt-status').innerText = 'Siz yutdingiz! 🏆';
+                tttActive = false;
+                return;
+            }
+
+            if (!tttBoard.includes('')) {
+                document.getElementById('ttt-status').innerText = 'Durang! 🤝';
+                tttActive = false;
+                return;
+            }
+
+            // Bot yurishi (O) - 500ms dan keyin avtomat o'ylaydi
+            tttActive = false;
+            document.getElementById('ttt-status').innerText = 'Bot oʻylamoqda... 🤖';
+
+            setTimeout(() => {
+                let emptyIndices = tttBoard.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+                if (emptyIndices.length > 0) {
+                    let botIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                    tttBoard[botIndex] = 'O';
+                    cells[botIndex].innerText = 'O';
+                    cells[botIndex].style.color = '#00adb5';
+
+                    if (checkTTTWinner('O')) {
+                        document.getElementById('ttt-status').innerText = 'Bot yutdi! 🤖';
+                    } else if (!tttBoard.includes('')) {
+                        document.getElementById('ttt-status').innerText = 'Durang! 🤝';
+                    } else {
+                        document.getElementById('ttt-status').innerText = 'Sizning navbatingiz (X)';
+                        tttActive = true;
+                    }
+                }
+            }, 400);
+        }
+
+        function checkTTTWinner(player) {
+            const winPatterns = [
+                [0,1,2], [3,4,5], [6,7,8], // Gorizontal
+                [0,3,6], [1,4,7], [2,5,8], // Vertikal
+                [0,4,8], [2,4,6]           // Diagonal
+            ];
+            return winPatterns.some(pattern => {
+                return pattern.every(idx => tttBoard[idx] === player);
+            });
+        }
+
+        function resetTTT() {
+            tttBoard = Array(9).fill('');
+            tttActive = true;
+            document.getElementById('ttt-status').innerText = 'Sizning navbatingiz (X)';
+            document.querySelectorAll('.ttt-cell').forEach(cell => cell.innerText = '');
+        }
+
+        // ==========================================
+        // MODULE 3: NUMBER GUESSING LOGIKASI
+        // ==========================================
+        let targetNumber = 0;
+        let attempts = 0;
+
+        function resetGuessGame() {
+            targetNumber = Math.floor(Math.random() * 50) + 1;
+            attempts = 0;
+            document.getElementById('guess-result').innerText = 'Yangi oʻyin boshlandi. Son kiriting!';
+            document.getElementById('guess-input').value = '';
+        }
+
+        function checkGuess() {
+            const inputElement = document.getElementById('guess-input');
+            const userGuess = parseInt(inputElement.value);
+            const resultBox = document.getElementById('guess-result');
+
+            if (isNaN(userGuess) || userGuess < 1 || userGuess > 50) {
+                resultBox.innerText = 'Iltimos, 1 dan 50 gacha son kiriting!';
+                return;
+            }
+
+            attempts++;
+
+            if (userGuess === targetNumber) {
+                resultBox.innerHTML = `<span style="color:#4e9f3d; font-weight:bold;">Tabriklaymiz! Topdingiz! 🎉</span><br>O'ylangan son: ${targetNumber}<br>Urinishlar soni: ${attempts}`;
+                tg.HapticFeedback.notificationOccurred('success');
+            } else if (userGuess < targetNumber) {
+                resultBox.innerText = `Kattaroq son kiriting! ⬆️ (Urinish: ${attempts})`;
+            } else {
+                resultBox.innerText = `Kichikroq son kiriting! ⬇️ (Urinish: ${attempts})`;
+            }
+        }
+    </script>
+</body>
+</html>
